@@ -1,6 +1,22 @@
-// Copyright (c) 2018-2022 Brandon Lehmann
+// Copyright (c) 2018-2022, Brandon Lehmann <brandonlehmann@gmail.com>
 //
-// Please see the included LICENSE file for more information.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 import amqplib from 'amqplib';
 import { EventEmitter } from 'events';
@@ -11,16 +27,25 @@ import Channel = amqplib.Channel;
 import ConsumeMessage = amqplib.ConsumeMessage;
 import PublishOptions = amqplib.Options.Publish;
 import Connection = amqplib.Connection;
+
 export { Message, Channel, PublishOptions };
 
-interface OptionalOptions {
+export interface OptionalOptions {
+    /**
+     * @default true
+     */
     autoReconnect: boolean;
+    /**
+     * @default 5672
+     */
     port: number;
     user: string;
     password: string;
+    virtualHost: string;
+    query: string;
 }
 
-interface RequiredOptions {
+export interface RequiredOptions {
     host: string;
 }
 
@@ -54,6 +79,13 @@ export default class RabbitMQ extends EventEmitter {
                     .catch(error => this.emit('log', error.toString()));
             });
         }
+    }
+
+    /**
+     * Returns if the server is connected
+     */
+    public get connected (): boolean {
+        return this.connection?.connection.serverProperties.version !== 'undefined';
     }
 
     public on(event: 'disconnect', listener: (error: Error) => void): this;
@@ -180,12 +212,25 @@ export default class RabbitMQ extends EventEmitter {
     }
 
     /**
-     * Registers a consume of messages on the channel for the specified queue
+     * Cancels the specified consumer
+     *
+     * @param consumerTag
+     */
+    public async cancelConsumer (consumerTag: string): Promise<void> {
+        if (!this.channel) {
+            throw new Error('Channel not connected');
+        }
+
+        await this.channel.cancel(consumerTag);
+    }
+
+    /**
+     * Registers a consumer of messages on the channel for the specified queue
      *
      * @param queue
      * @param prefetch
      */
-    public async registerConsumer<PayloadType = any> (queue: string, prefetch?: number): Promise<void> {
+    public async registerConsumer<PayloadType = any> (queue: string, prefetch?: number): Promise<string> {
         if (!this.channel) {
             throw new Error('Channel not connected');
         }
@@ -194,13 +239,13 @@ export default class RabbitMQ extends EventEmitter {
             await this.prefetch(prefetch);
         }
 
-        await this.channel.consume(queue, message => {
+        return (await this.channel.consume(queue, message => {
             if (message !== null) {
                 const payload: PayloadType = JSON.parse(message.content.toString());
 
                 this.emit('message', queue, message, payload);
             }
-        });
+        })).consumerTag;
     }
 
     /**
@@ -387,6 +432,16 @@ export default class RabbitMQ extends EventEmitter {
 
         result.push(`:${options.port || 5672}`);
 
+        if (options.virtualHost) {
+            result.push(`/${options.virtualHost}`);
+        }
+
+        if (options.query) {
+            result.push(`?${options.query}`);
+        }
+
         return result.join('');
     }
 }
+
+export { RabbitMQ };

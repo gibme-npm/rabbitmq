@@ -1,5 +1,11 @@
 # Simple RabbitMQ Helper Library
 
+## Documentation
+
+[https://gibme-npm.github.io/rabbitmq/](https://gibme-npm.github.io/rabbitmq/)
+
+## Sample Code
+
 ```typescript
 import RabbitMQ from "@gibme/rabbitmq";
 
