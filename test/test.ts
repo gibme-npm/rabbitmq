@@ -45,7 +45,7 @@ describe('Unit Tests', async () => {
         value2: 1
     };
 
-    const temp_queue = 'testqueue';
+    const temp_queue = process.env.MQ_TEST_QUEUE || 'testqueue';
 
     before(async () => {
         await rabbit.connect();
