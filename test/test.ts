@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import assert from 'assert';
+import * as assert from 'assert';
 import { describe, it } from 'mocha';
 import RabbitMQ from '../src/rabbitmq';
 import * as dotenv from 'dotenv';
@@ -57,7 +57,7 @@ describe('Unit Tests', async () => {
 
     describe('Basic Tests', async () => {
         it('Connected?', () => {
-            assert(rabbit.connected);
+            assert.equal(rabbit.connected, true);
         });
 
         it('Create Queue', async () => {
@@ -102,8 +102,8 @@ describe('Unit Tests', async () => {
 
             const reply = await rabbit.requestReply<SamplePayload, SamplePayload>(temp_queue, data, 10_000);
 
-            assert(reply.value1 !== data.value1);
-            assert(reply.value2 === data.value2 + 1);
+            assert.notEqual(reply.value1, data.value1);
+            assert.equal(reply.value2, data.value2 + 1);
         });
     });
 
