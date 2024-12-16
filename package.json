@@ -1,6 +1,6 @@
 {
   "name": "@gibme/rabbitmq",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "A simple port forward helper/service",
   "main": "dist/rabbitmq.js",
   "types": "dist/rabbitmq.d.ts",
@@ -38,11 +38,11 @@
     "email": "brandonlehmann@gmail.com"
   },
   "dependencies": {
-    "@types/amqplib": "^0.10.5",
+    "@types/amqplib": "^0.10.6",
     "@types/uuid": "^10.0.0",
     "abort-controller": "^3.0.0",
-    "amqplib": "^0.10.4",
-    "uuid": "^10.0.0"
+    "amqplib": "^0.10.5",
+    "uuid": "^11.0.3"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",
