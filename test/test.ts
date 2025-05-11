@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Brandon Lehmann <brandonlehmann@gmail.com>
+// Copyright (c) 2018-2025, Brandon Lehmann <brandonlehmann@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,15 +18,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import * as assert from 'assert';
+import assert from 'assert';
 import { describe, it } from 'mocha';
-import RabbitMQ from '../src/rabbitmq';
-import * as dotenv from 'dotenv';
+import RabbitMQ from '../src';
+import { config } from 'dotenv';
 import { EventEmitter } from 'events';
 
-dotenv.config();
+config();
 
-interface SamplePayload {
+type SamplePayload = {
     value1: boolean;
     value2: number;
 }

@@ -22,47 +22,19 @@ import amqplib from 'amqplib';
 import { EventEmitter } from 'events';
 import { v4 as UUID } from 'uuid';
 import AbortController from 'abort-controller';
-import Message = amqplib.Message;
-import Channel = amqplib.Channel;
-import ConsumeMessage = amqplib.ConsumeMessage;
-import PublishOptions = amqplib.Options.Publish;
-import Connection = amqplib.Connection;
 
-export { Message, Channel, PublishOptions };
-
-export interface OptionalOptions {
-    /**
-     * @default true
-     */
-    autoReconnect: boolean;
-    /**
-     * @default 5672
-     */
-    port: number;
-    user: string;
-    password: string;
-    virtualHost: string;
-    query: string;
-}
-
-export interface RequiredOptions {
-    host: string;
-}
-
-export interface ConnectionOptions extends RequiredOptions, Partial<OptionalOptions> {}
-
-export default class RabbitMQ extends EventEmitter {
+export class RabbitMQ extends EventEmitter {
     public readonly replyQueue = this.uuid();
     private readonly connectionString;
-    private channel?: Channel;
-    private connection?: Connection;
+    private channel?: amqplib.Channel;
+    private connection?: amqplib.ChannelModel;
 
     /**
      * Creates a new instance of the RabbitMQ helper
      *
      * @param options
      */
-    constructor (public readonly options: ConnectionOptions) {
+    constructor (public readonly options: RabbitMQ.Options) {
         super();
 
         options.autoReconnect ??= true;
@@ -95,9 +67,9 @@ export default class RabbitMQ extends EventEmitter {
     public on(event: 'log', listener: (entry: Error | string) => void): this;
 
     /** @ignore */
-    public on(event: 'reply', listener: (message: ConsumeMessage) => void): this;
+    public on(event: 'reply', listener: (message: RabbitMQ.Consumer.Message) => void): this;
 
-    public on<T>(event: 'message', listener: (queue: string, message: Message, payload: T) => void): this;
+    public on<T>(event: 'message', listener: (queue: string, message: RabbitMQ.Message, payload: T) => void): this;
 
     public on (event: any, listener: (...args: any[]) => void): this {
         return super.on(event, listener);
@@ -110,7 +82,7 @@ export default class RabbitMQ extends EventEmitter {
      *
      * @param message
      */
-    public async ack (message: Message): Promise<void> {
+    public async ack (message: RabbitMQ.Message): Promise<void> {
         return this.channel?.ack(message);
     }
 
@@ -193,7 +165,7 @@ export default class RabbitMQ extends EventEmitter {
      * @param message
      * @param requeue
      */
-    public async nack (message: Message, requeue = true): Promise<void> {
+    public async nack (message: RabbitMQ.Message, requeue = true): Promise<void> {
         return this.channel?.nack(message, undefined, requeue);
     }
 
@@ -258,7 +230,7 @@ export default class RabbitMQ extends EventEmitter {
      *        if we do not want to requeue, set to false
      */
     public async reply<PayloadType = any> (
-        message: Message,
+        message: RabbitMQ.Message,
         payload: PayloadType,
         noAck = false,
         requeue = true
@@ -315,7 +287,7 @@ export default class RabbitMQ extends EventEmitter {
 
             controller.signal.addEventListener('abort', timeoutListener);
 
-            const checkReply = async (message: ConsumeMessage): Promise<void> => {
+            const checkReply = async (message: RabbitMQ.Consumer.Message): Promise<void> => {
                 if (message.properties.correlationId === requestId) {
                     const response: ResponseType = JSON.parse(message.content.toString());
 
@@ -356,7 +328,7 @@ export default class RabbitMQ extends EventEmitter {
                     });
                 }
 
-                const options: PublishOptions = {
+                const options: RabbitMQ.Publish.Options = {
                     correlationId: requestId,
                     replyTo: replyQueue
                 };
@@ -386,7 +358,7 @@ export default class RabbitMQ extends EventEmitter {
     public async sendToQueue<PayloadType = any> (
         queue: string,
         payload: PayloadType | Buffer,
-        options?: PublishOptions
+        options?: RabbitMQ.Publish.Options
     ): Promise<boolean> {
         if (!this.channel) {
             throw new Error('Channel not connected');
@@ -415,7 +387,7 @@ export default class RabbitMQ extends EventEmitter {
      * @param options
      * @protected
      */
-    protected buildConnectionString (options: ConnectionOptions): string {
+    protected buildConnectionString (options: RabbitMQ.Options): string {
         const result = ['amqp://'];
 
         if (options.user) {
@@ -444,4 +416,32 @@ export default class RabbitMQ extends EventEmitter {
     }
 }
 
-export { RabbitMQ };
+export namespace RabbitMQ {
+    export type Options = {
+        host: string;
+        /**
+         * @default true
+         */
+        autoReconnect?: boolean;
+        /**
+         * @default 5672
+         */
+        port?: number;
+        user?: string;
+        password?: string;
+        virtualHost?: string;
+        query?: string;
+    }
+
+    export type Message = amqplib.Message;
+
+    export namespace Consumer {
+        export type Message = amqplib.ConsumeMessage;
+    }
+
+    export namespace Publish {
+        export type Options = amqplib.Options.Publish;
+    }
+}
+
+export default RabbitMQ;
