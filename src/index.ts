@@ -21,7 +21,6 @@
 import amqplib from 'amqplib';
 import { EventEmitter } from 'events';
 import { v4 as UUID } from 'uuid';
-import AbortController from 'abort-controller';
 
 export class RabbitMQ extends EventEmitter {
     public readonly replyQueue = this.uuid();

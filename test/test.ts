@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import assert from 'assert';
-import { describe, it } from 'mocha';
+import { describe, it, before, after } from 'node:test';
 import RabbitMQ from '../src';
 import { config } from 'dotenv';
 import { EventEmitter } from 'events';
