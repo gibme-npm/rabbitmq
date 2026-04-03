@@ -31,7 +31,7 @@ type SamplePayload = {
     value2: number;
 }
 
-describe('Unit Tests', async () => {
+describe('Unit Tests', () => {
     const rabbit = new RabbitMQ({
         host: process.env.MQ_HOST || '127.0.0.1',
         port: parseInt(process.env.MQ_PORT || '5672'),
@@ -55,7 +55,7 @@ describe('Unit Tests', async () => {
         await rabbit.close();
     });
 
-    describe('Basic Tests', async () => {
+    describe('Basic Tests', () => {
         it('Connected?', () => {
             assert.equal(rabbit.connected, true);
         });
@@ -69,7 +69,7 @@ describe('Unit Tests', async () => {
         });
     });
 
-    describe('Worker / Consumer', async () => {
+    describe('Worker / Consumer', () => {
         let consumer: string;
 
         before(async () => {
@@ -107,7 +107,7 @@ describe('Unit Tests', async () => {
         });
     });
 
-    describe('Push / Publish to Workers', async () => {
+    describe('Push / Publish to Workers', () => {
         let consumer: string;
 
         before(async () => {

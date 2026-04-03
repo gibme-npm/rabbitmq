@@ -20,6 +20,7 @@
 
 import amqplib from 'amqplib';
 import { EventEmitter } from 'events';
+import type { Socket } from 'net';
 import { v4 as UUID } from 'uuid';
 
 export class RabbitMQ extends EventEmitter {
@@ -110,12 +111,35 @@ export class RabbitMQ extends EventEmitter {
      * Closes the connection to the server
      */
     public async close (): Promise<void> {
-        const delChannel = (): undefined => {
-            delete this.channel;
-            return undefined;
-        };
+        this.removeAllListeners('disconnect');
 
-        return this.channel?.close() && delChannel() && this.connection?.close();
+        const socket = this.socket;
+
+        if (this.channel) {
+            await this.channel.close();
+            delete this.channel;
+        }
+
+        if (this.connection) {
+            await this.connection.close();
+            delete this.connection;
+        }
+
+        if (socket) {
+            if (!socket.destroyed) {
+                socket.destroy();
+            }
+
+            socket.unref();
+        }
+    }
+
+    /**
+     * Returns the underlying TCP socket from the amqplib connection
+     * @private
+     */
+    private get socket (): Socket | undefined {
+        return (this.connection?.connection as any)?.stream;
     }
 
     /**
